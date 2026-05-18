@@ -258,7 +258,3 @@ The 45 intent categories were derived from ~7,500 synthetic fintech IT support t
 8. **Priority classifier** — XGBoost on raw embeddings + 14 urgency regex features; class-weighted. Test accuracy: 75% (high F1 0.80, medium F1 0.71, low F1 0.75).
 
 ---
-
-## License
-
-MIT
