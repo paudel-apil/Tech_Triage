@@ -6,11 +6,13 @@ Built with BGE-M3 embeddings, HDBSCAN clustering, XGBoost, Qdrant, Groq (Qwen3-3
 
 ---
 
-## Demo
+## Live Demo
 
-> [Backend](https://huggingface.co/spaces/paudelapil/Tech_Triage)
-> [Backend/Docs](https://paudelapil-tech-triage.hf.space/docs)
-> [Frontend](https://huggingface.co/spaces/your-username/ticketiq-frontend)
+| | Link |
+|---|---|
+| 🚀 **Backend API** | [huggingface.co/spaces/paudelapil/Tech_Triage](https://huggingface.co/spaces/paudelapil/Tech_Triage) |
+| 📄 **API Docs** (Swagger) | [paudelapil-tech-triage.hf.space/docs](https://paudelapil-tech-triage.hf.space/docs) |
+| 🖥️ **Frontend UI** | Coming soon |
 
 ---
 
@@ -256,3 +258,7 @@ The 45 intent categories were derived from ~7,500 synthetic fintech IT support t
 8. **Priority classifier** — XGBoost on raw embeddings + 14 urgency regex features; class-weighted. Test accuracy: 75% (high F1 0.80, medium F1 0.71, low F1 0.75).
 
 ---
+
+## License
+
+MIT
