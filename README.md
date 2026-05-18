@@ -10,9 +10,9 @@ Built with BGE-M3 embeddings, HDBSCAN clustering, XGBoost, Qdrant, Groq (Qwen3-3
 
 | | Link |
 |---|---|
-| 🚀 **Backend API** | [huggingface.co/spaces/paudelapil/Tech_Triage](https://huggingface.co/spaces/paudelapil/Tech_Triage) |
-| 📄 **API Docs** (Swagger) | [paudelapil-tech-triage.hf.space/docs](https://paudelapil-tech-triage.hf.space/docs) |
-| 🖥️ **Frontend UI** | Coming soon |
+| **Backend API** | [huggingface.co/spaces/paudelapil/Tech_Triage](https://huggingface.co/spaces/paudelapil/Tech_Triage) |
+| **API Docs** (Swagger) | [paudelapil-tech-triage.hf.space/docs](https://paudelapil-tech-triage.hf.space/docs) |
+| **Frontend UI** | [paudelapil/Tech_Triage_Frontend](https://huggingface.co/spaces/paudelapil/Tech_Triage_Frontend) |
 
 ---
 
