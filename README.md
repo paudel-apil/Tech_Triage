@@ -9,8 +9,8 @@ Built with BGE-M3 embeddings, HDBSCAN clustering, XGBoost, Qdrant, Groq (Qwen3-3
 ## Demo
 
 > Backend → [HuggingFace Space](https://huggingface.co/spaces/paudelapil/Tech_Triage)
-> Docs → [HuggingFace Space](https://paudelapil-tech-triage.hf.space/docs)
-> Frontend → [HuggingFace Space](https://huggingface.co/spaces/your-username/ticketiq-frontend)
+  > Docs → [HuggingFace Space](https://paudelapil-tech-triage.hf.space/docs)
+   > Frontend → [HuggingFace Space](https://huggingface.co/spaces/your-username/ticketiq-frontend)
 
 ---
 
