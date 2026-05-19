@@ -225,7 +225,7 @@ Both the backend and frontend run as Docker Spaces on Hugging Face.
 2. Copy the `frontend/` folder into the Space repo.
 3. Update `API_BASE` in `ticketiq/state.py`:
    ```python
-   API_BASE = "https://<backend-space>.hf.space/api/v1/tickets"
+   API_BASE = "https://paudelapil-tech-triage.hf.space"
    ```
 4. Add the frontend Space origin to the backend's CORS `allow_origins` list.
 5. Push.
