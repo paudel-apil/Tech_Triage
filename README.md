@@ -1,4 +1,4 @@
-# TicketIQ
+# IT Triage
 
 **ML-powered IT support ticket triage.** TicketIQ automatically classifies incoming support tickets into 45 curated intent categories, predicts priority, routes to the right department, and generates actionable resolution plans — all in under two seconds.
 
