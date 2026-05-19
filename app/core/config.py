@@ -5,6 +5,12 @@ from sqlalchemy.ext.declarative import declarative_base
 SECRET_KEY = config('SECRET_KEY')
 
 class Settings(BaseSettings):
+    """
+    Application settings configuration class.
+
+    This uses Pydantic's BaseSettings to automatically read
+    environment variables and validate their types
+    """
     PROJECT_NAME: str = 'Technical Support Ticket Platform'
     DATABASE_URL: str = config('DATABASE_URL')
     QDRANT_URL: str = config('QDRANT_URL')
