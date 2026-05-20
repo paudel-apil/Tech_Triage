@@ -7,6 +7,9 @@ from ticketiq.state import TicketState
 from ticketiq.submit import submit_page
 from ticketiq.tickets_list import tickets_page
 from ticketiq.search import search_page
+from ticketiq.stats import stats_page
+from .pages.trends import trends_page
+from .pages.playground import playground_page
 from ticketiq.ui import (
     BG, SURFACE, BORDER, BORDER_HI, ACCENT, ACCENT_BG,
     MUTED, TEXT, SANS, MONO, RADIUS,
@@ -23,6 +26,10 @@ NAV = [
     ("submit",  "ticket-check", "Submit"),
     ("tickets", "list-filter",  "Tickets"),
     ("search",  "search",       "Search"),
+    ("stats",   "bar-chart-2",  "Stats"),
+    ("trends", "trending-up", "Trends"),
+    ("playground", "flask-conical", "Playground"),
+
 ]
 
 
@@ -118,6 +125,9 @@ def page_body() -> rx.Component:
         ("submit",  submit_page()),
         ("tickets", tickets_page()),
         ("search",  search_page()),
+        ("stats", stats_page()),
+        ("trends", trends_page()),
+        ("playground", playground_page()),
         submit_page(),
     )
 

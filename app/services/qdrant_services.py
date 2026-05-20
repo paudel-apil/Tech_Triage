@@ -114,12 +114,15 @@ class QdrantService:
         points = result.points if hasattr(result, 'points') else result
 
         return [{
+            "id": hit.id,
             "similarity": round(hit.score, 4),
             "description": hit.payload.get("description", "")[:250],
             "label": hit.payload.get("assigned_label", ""),
             "department": hit.payload.get("department", ""),
             "priority": hit.payload.get("priority", ""),
-            "classified_at": hit.payload.get("classified_at", "")
+            "source": hit.payload.get("source", ""),
+            "confidence": hit.payload.get("confidence", ""),
+            "classified_at": hit.payload.get("classified_at", ""),
         }for hit in points]
     
     def store_incoming(self, embedding: np.ndarray, description: str,

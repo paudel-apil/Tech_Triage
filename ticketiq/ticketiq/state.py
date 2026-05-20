@@ -2,6 +2,7 @@ import httpx
 import reflex as rx
 
 API_BASE = "http://localhost:8000/api/v1/tickets"
+API_BASE_V1 = "http://localhost:8000/api/v1"
 TIMEOUT = 60.0
 PAGE_SIZE = 12
 
@@ -13,6 +14,7 @@ class TicketState(rx.State):
     submitting: bool = False
     submit_error: str = ""
     result: dict[str, object] = {}
+    sim_threshold: float = 0.60
 
     # ── Tickets list ───────────────────────────────────────────────────────
     tickets: list[dict] = []
@@ -20,6 +22,12 @@ class TicketState(rx.State):
     page: int = 0
     list_loading: bool = False
     list_error: str = ""
+    department_filter: str = ""
+    departments: list[str] = []
+
+    # ── Modal ──────────────────────────────────────────────────────────────
+    modal_ticket: dict = {}
+    modal_open: bool = False
 
     # ── Search ─────────────────────────────────────────────────────────────
     query: str = ""
@@ -28,9 +36,38 @@ class TicketState(rx.State):
     search_error: str = ""
     searched: bool = False
 
+    # ── Stats ──────────────────────────────────────────────────────────────
+    stats: dict = {}
+    stats_loading: bool = False
+    stats_error: str = ""
+
+    all_departments: list[str] = [
+        "Access & Permissions",
+        "AI / ML",
+        "Application Development",
+        "CI/CD & Build Systems",
+        "Data Streaming & Pipeline",
+        "Database & Data Engineering",
+        "Deployment & IaC",
+        "Developer Experience & Tooling",
+        "DevOps / Platform Engineering",
+        "External Integrations & API Management",
+        "Hardware / IT Support",
+        "Monitoring & Observability",
+        "Networking & Connectivity",
+        "Security",
+    ]
+
+
     # ── UI state ───────────────────────────────────────────────────────────
     active_tab: str = "submit"
     expanded: list[int] = []   # ticket ids with solution open
+
+  # ── Feedback ───────────────────────────────────────────────────────
+    show_feedback: bool = False
+    feedback_type: str = ""
+    selected_correction: str = ""
+    feedback_submitted: bool = False
 
     # ── Computed ───────────────────────────────────────────────────────────
     @rx.var
@@ -71,21 +108,94 @@ class TicketState(rx.State):
     @rx.var
     def has_search_results(self) -> bool:
         return len(self.search_results) > 0
+    
+    @rx.var
+    def source_medoid_count(self) -> int:
+        return self.stats.get("source_breakdown", {}).get("medoid", 0)
+
+    @rx.var
+    def source_llm_count(self) -> int:
+        return self.stats.get("source_breakdown", {}).get("llm_fallback", 0)
+
+    @rx.var
+    def source_error_count(self) -> int:
+        return self.stats.get("source_breakdown", {}).get("error", 0)
+
+    @rx.var
+    def stats_total_classified(self) -> int:
+        return self.stats.get("total_classified", 0)
+
+    @rx.var
+    def stats_medoids(self) -> int:
+        return self.stats.get("medoids", 0)
+    
+    @rx.var
+    def threshold_pct(self) -> str:
+        return f"{self.sim_threshold:.0%}"
+
+    @rx.var
+    def avg_confidence_pct(self) -> str:
+        raw = self.stats.get("avg_confidence", 0.0)
+        return f"{raw * 100:.3f}%"
+
+    @rx.var
+    def stats_top_labels(self) -> list[dict]:
+        raw = self.stats.get("top_labels", [])  
+        filtered = []
+        for item in raw:
+            lbl = item.get("label", "Unknown")
+            if lbl.lower() in ("uncategorized", "uncategorised"):
+                continue
+            filtered.append(item)
+        return filtered[:5]
+        
+    @rx.var
+    def stats_department_breakdown(self) -> list[dict]:
+        raw = self.stats.get("department_breakdown", [])
+        merged = {}
+        for item in raw:
+            dept = item.get("department", "Unknown")
+            count = item.get("count", 0)
+            if dept.lower() in ("uncategorized", "uncategorised"):
+                continue         
+            merged[dept] = merged.get(dept, 0) + count
+        return [{"department": k, "count": v} for k, v in sorted(merged.items())]
+    
+    @rx.var
+    def uncategorised_count(self) -> int:
+        raw = self.stats.get("department_breakdown", [])
+        return sum(
+            item.get("count", 0)
+            for item in raw
+            if item.get("department", "").lower() in ("uncategorized", "uncategorised")
+        )
 
     # ── Submit handlers ────────────────────────────────────────────────────
     def set_description(self, value: str):
         self.description = value
 
+    def set_sim_threshold(self, value: float):
+        self.sim_threshold = value
+
+    @rx.var
+    def department_options(self) -> list[str]:
+        return ["All departments"] + self.departments
+
     async def submit_ticket(self):
         if not self.can_submit:
             return
         self.submitting = True
+        self.feedback_submitted = False
+        self.show_feedback = False
+        self.feedback_type = ""
+        self.selected_correction = ""
         self.submit_error = ""
         self.result = {}
         yield
         try:
             async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-                r = await client.post(API_BASE + "/", json={"description": self.description})
+                r = await client.post(API_BASE + "/", json={"description": self.description,
+                                                            "sim_threshold": self.sim_threshold,},)
                 r.raise_for_status()
                 self.result = r.json()
         except httpx.HTTPStatusError as e:
@@ -99,6 +209,32 @@ class TicketState(rx.State):
         self.description = ""
         self.result = {}
         self.submit_error = ""
+        self.feedback_submitted = False
+        self.show_feedback = False
+        self.feedback_type = ""
+        self.selected_correction = ""
+
+    # ── Tickets list ───────────────────────────────────────────────────────
+    async def load_department(self):
+        try:
+            async with httpx.AsyncClient(timeout = 10) as client:
+                r = await client.get(API_BASE + "/departments")
+                r.raise_for_status()
+                self.departments = r.json().get("departments", [])
+        except Exception:
+            pass
+    
+    def set_department_filter(self, value: str):
+        self.department_filter = value
+        self.page = 0
+    
+    async def apply_department_filter(self, value: str):
+        if value == "All departments":
+            value = ""
+        self.department_filter = value
+        self.page = 0
+        async for u in self.load_tickets():
+            yield u
 
     # ── List handlers ──────────────────────────────────────────────────────
     async def load_tickets(self):
@@ -106,10 +242,17 @@ class TicketState(rx.State):
         self.list_error = ""
         yield
         try:
+            params: dict = {
+                "limit": PAGE_SIZE,
+                "offset": self.page * PAGE_SIZE,
+            }
+            if self.department_filter:
+                params["department"] = self.department_filter
+
             async with httpx.AsyncClient(timeout=30) as client:
                 r = await client.get(
                     API_BASE + "/",
-                    params={"limit": PAGE_SIZE, "offset": self.page * PAGE_SIZE},
+                    params=params,
                 )
                 r.raise_for_status()
                 data = r.json()
@@ -131,6 +274,15 @@ class TicketState(rx.State):
             self.page -= 1
             async for u in self.load_tickets():
                 yield u
+
+    # ── Modal ──────────────────────────────────────────────────────────────
+    def open_modal(self, ticket: dict):
+        self.modal_ticket = ticket
+        self.modal_open = True
+ 
+    def close_modal(self):
+        self.modal_open = False
+        self.modal_ticket = {}
 
     # ── Search handlers ────────────────────────────────────────────────────
     def set_query(self, value: str):
@@ -164,12 +316,32 @@ class TicketState(rx.State):
         self.searched = False
         self.search_error = ""
 
+    # ── Stats ──────────────────────────────────────────────────────────────
+    async def load_stats(self):
+        self.stats_loading = True
+        self.stats_error = ""
+        yield
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                r = await client.get(API_BASE + "/stats")
+                r.raise_for_status()
+                self.stats = r.json()
+        except Exception as e:
+            self.stats_error = str(e)
+        finally:
+            self.stats_loading = False
+ 
+
     # ── Tab nav ────────────────────────────────────────────────────────────
     async def go_to(self, tab: str):
         self.active_tab = tab
         if tab == "tickets":
             self.page = 0
+            await self.load_department()
             async for u in self.load_tickets():
+                yield u
+        elif tab == "stats":
+            async for u in self.load_stats():
                 yield u
 
     # ── Expand/collapse solution ───────────────────────────────────────────
@@ -178,3 +350,137 @@ class TicketState(rx.State):
             self.expanded = [i for i in self.expanded if i != tid]
         else:
             self.expanded = self.expanded + [tid]
+
+    async def thumb_up(self):
+        self.feedback_type = "thumbs_up"
+        self.show_feedback = False
+        await self.submit_feedback()
+
+    async def thumb_down(self):
+        self.feedback_type = "thumbs_down"
+        self.show_feedback = True   # show the label dropdown
+
+    def set_correction(self, value: str):
+        self.selected_correction = value
+
+    async def submit_feedback(self):
+        if not self.result.get("id"):
+            return
+        ticket_id = self.result["id"]
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                await client.post(
+                    f"{API_BASE}/{ticket_id}/feedback",
+                    json={
+                        "feedback_type": self.feedback_type,
+                        "corrected_label": self.selected_correction if self.feedback_type == "thumbs_down" else None
+                    }
+                )
+            self.feedback_submitted = True
+            self.show_feedback = False
+        except Exception as e:
+            self.submit_error = str(e)
+
+
+class TrendsState(rx.State):
+    # Accelerating categories
+    accelerating: list[dict] = []
+    # Priority timeline
+    priority_timeline: list[dict] = []
+    # Fallback rate
+    fallback_timeline: list[dict] = []
+    # Department load
+    department_load: list[dict] = []
+    # New labels
+    new_labels: list[dict] = []
+
+    loading: bool = False
+    error: str = ""
+
+    async def load_all(self):
+        self.loading = True
+        self.error = ""
+        yield
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                # Fetch all endpoints concurrently
+                res_acc = await client.get(f"{API_BASE}/trends/accelerating")
+                res_pri = await client.get(f"{API_BASE}/trends/priority-timeline?days=7&granularity=hour")
+                res_fb  = await client.get(f"{API_BASE}/trends/fallback-rate?days=14")
+                res_dep = await client.get(f"{API_BASE}/trends/department-load?days=14")
+                res_new = await client.get(f"{API_BASE}/trends/new-labels")
+
+            self.accelerating = res_acc.json()["categories"]
+            self.priority_timeline = res_pri.json()["timeline"]
+            self.fallback_timeline = res_fb.json()["timeline"]
+            self.department_load = res_dep.json()["timeline"]
+            self.new_labels = res_new.json()["labels"]
+        except Exception as e:
+            self.error = str(e)
+        finally:
+            self.loading = False
+
+class PlaygroundState(rx.State):
+    probe_text: str = ""
+    probe_results: list[dict] = []
+
+    sweep_text: str = ""
+    sweep_medoid: dict = {}             
+    sweep_llm: dict = {}                
+    transition_threshold: float = 0.0
+
+    medoids: list[dict] = []
+
+    batch_text: str = ""
+    batch_results: list[dict] = []
+
+    def set_probe_text(self, value: str):
+        self.probe_text = value
+
+    def set_sweep_text(self, value: str):
+        self.sweep_text = value
+
+    def set_batch_text(self, value: str):
+        self.batch_text = value
+
+    async def probe(self):
+        if not self.probe_text.strip():
+            return
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{API_BASE_V1}/dev/probe",
+                json={"text": self.probe_text.strip()}
+            )
+            data = resp.json()
+            self.probe_results = data["matches"]
+
+    async def sweep(self):
+        if not self.sweep_text.strip():
+            return
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{API_BASE_V1}/dev/threshold-sweep",
+                json={"text": self.sweep_text.strip()}
+            )
+            data = resp.json()
+            self.sweep_medoid = data.get("medoid", {})
+            self.sweep_llm = data.get("llm_fallback", {})
+            self.transition_threshold = data.get("transition_threshold", 0.0)
+
+    async def load_medoids(self):
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.get(f"{API_BASE_V1}/dev/medoids")
+            data = resp.json()
+            self.medoids = data["medoids"]
+
+    async def batch(self):
+        lines = [line.strip() for line in self.batch_text.split("\n") if line.strip()]
+        if not lines:
+            return
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{API_BASE_V1}/dev/batch",
+                json={"texts": lines}
+            )
+            data = resp.json()
+            self.batch_results = data["results"]

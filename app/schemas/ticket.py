@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field   
 from typing import Optional
 
 class TicketCreate(BaseModel):
@@ -9,6 +9,12 @@ class TicketCreate(BaseModel):
     a ticket via the API.
     """
     description: str
+    sim_threshold: Optional[float] = Field(
+        default = 0.60,
+        ge = 0.0,
+        le = 1.0,
+        description = "Medoid similarity threshold (0.0 - 1.0). Lower = more LLM Fallback"
+    )
 
 class SimilarTicket(BaseModel):
     similarity: float
@@ -41,3 +47,7 @@ class TicketListResponse(BaseModel):
     """
     tickets: list[TicketResponse]
     total: int
+
+class FeedbackCreate(BaseModel):
+    feedback_type: str
+    corrected_label: Optional[str] = None

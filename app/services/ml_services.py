@@ -12,6 +12,7 @@ class MLService:
                  qdrant_url: str = "http://localhost:6333",
                  qdrant_api_key: str = None):
         self.embedder = load_embedder()
+        _ = self.embedder.encode(["warmup"], normalize_embeddings=True)
 
         with open(f"{asset_dir}/meta_label_map.json") as f:
             raw_meta = json.load(f)
@@ -57,6 +58,9 @@ class MLService:
         source = medoid_result["source"]
         meta_id = medoid_result["meta_cluster_id"]
 
+        if department.lower() == "uncategorized":
+            department = "Uncategorised"
+
         similar = self.qdrant.search_similar(raw_emb, limit=5)
 
         solution = None
@@ -79,18 +83,6 @@ class MLService:
 
         point_id = None
         created_at = None
-        if store:
-            point_id = self.qdrant.store_incoming(
-                embedding=raw_emb,
-                description=description,
-                label=label,
-                department=department,
-                priority=priority,
-                source=source,
-                confidence=confidence,
-                meta_cluster_id=meta_id
-            )
-            created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
         return {
             "id": point_id,

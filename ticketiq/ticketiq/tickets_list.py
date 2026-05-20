@@ -2,11 +2,34 @@
 import reflex as rx
 from .state import TicketState
 from .card import ticket_card
+from .modal import ticket_modal
+
 from .ui import (
     error_banner, empty_state, ghost_btn,
     ACCENT, BORDER, MUTED, TEXT, SURFACE, SANS, MONO, RADIUS,
 )
 
+def _dept_filter() -> rx.Component:
+    """Department filter dropdown."""
+    return rx.hstack(
+        rx.icon("filter", size=13, color=MUTED),
+        rx.select(
+            TicketState.department_options,                  
+            value=TicketState.department_filter,
+            on_change=TicketState.apply_department_filter,
+            placeholder="All departments",
+            font_size="12px",
+            font_family=SANS,
+            color=rx.cond(TicketState.department_filter != "", TEXT, MUTED),
+            background=SURFACE,
+            border=f"1px solid {BORDER}",
+            border_radius=RADIUS,
+            padding="6px 12px",
+            min_width="220px",
+            cursor="pointer",
+        ),
+        align="center", gap="8px",
+    )
 
 def _pagination() -> rx.Component:
     return rx.cond(
@@ -50,10 +73,22 @@ def _pagination() -> rx.Component:
         ),
     )
 
+def _clickable_card(ticket: dict) -> rx.Component:
+    """Wrap card in a clickable box that opens the modal."""
+    return rx.box(
+        ticket_card(ticket, show_similar=False),
+        on_click=TicketState.open_modal(ticket),
+        cursor="pointer",
+        _hover={"transform": "translateY(-1px)", "transition": "transform 0.15s"},
+        transition="transform 0.15s",
+        width="100%",
+    )
 
 def tickets_page() -> rx.Component:
     return rx.box(
         # ── header ───────────────────────────────────────────────────────
+        ticket_modal(),
+
         rx.hstack(
             rx.vstack(
                 rx.heading(
@@ -67,6 +102,7 @@ def tickets_page() -> rx.Component:
                 align="start", gap="4px",
             ),
             rx.spacer(),
+            _dept_filter(),
             rx.button(
                 rx.icon("refresh-cw", size=13),
                 rx.text("Refresh", font_size="12px"),
@@ -93,15 +129,15 @@ def tickets_page() -> rx.Component:
                 rx.cond(
                     TicketState.tickets.length() == 0,
                     empty_state(
-                        "inbox",
-                        "No tickets yet",
-                        "Submit your first ticket and it will appear here.",
+                        "inbox", "No tickets",
+                        rx.cond(
+                            TicketState.department_filter != "",
+                            "No tickets in this department. Clear the filter to see all.",
+                            "Submit your first ticket and it will appear here.",
+                        ),
                     ),
                     rx.vstack(
-                        rx.foreach(
-                            TicketState.tickets,
-                            lambda t: ticket_card(t, show_similar=False),
-                        ),
+                        rx.foreach(TicketState.tickets, _clickable_card),
                         gap="12px", width="100%",
                     ),
                 ),

@@ -3,11 +3,11 @@ import reflex as rx
 
 # ── palette ───────────────────────────────────────────────────────────────────
 BG       = "#0a0a0b"
-SURFACE  = "#111114"
-BORDER   = "#1e1e24"
+SURFACE  = "#141418"
+BORDER   = "#2a2a36"
 BORDER_HI= "#2e2e38"
-TEXT     = "#e8e8f0"
-MUTED    = "#5a5a70"
+TEXT     = "#f0f0f5"
+MUTED    = "#9090a8"
 ACCENT   = "#f5a623"
 ACCENT_BG= "rgba(245,166,35,0.10)"
 
