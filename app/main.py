@@ -12,6 +12,12 @@ Base.metadata.create_all(bind = engine)
 
 
 async def keep_db_alive():
+    """
+    Background task to prevent database connection timeout. 
+
+    Some hosted DBs close idle connections. This function periodically sends a
+    lightweight query to keep the connection pool warm
+    """
     while True:
         try:
             db = SessionLocal()
@@ -23,6 +29,9 @@ async def keep_db_alive():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager.
+    """
     task = asyncio.create_task(keep_db_alive())
     yield
 

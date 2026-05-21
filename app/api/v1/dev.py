@@ -1,3 +1,7 @@
+"""
+Developer / debugging API routes for ML pipeline inspection
+"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
@@ -20,6 +24,12 @@ class BatchRequest(BaseModel):
 
 @router.post("/probe")
 def probe_embedding(req: ProbeRequest, ml: MLService = Depends(get_ml_service)):
+    """
+    Inspect embedding similarity against medoid clusters. 
+
+    Helps understand why a ticket was classified a certain way,
+    embedding-space behavior and cluster separation quality
+    """
     emb = encode_single(req.text, ml.embedder).astype(np.float32)
     result = ml.qdrant.client.query_points(
         collection_name=ml.qdrant.medoid_collection,
@@ -41,6 +51,11 @@ def probe_embedding(req: ProbeRequest, ml: MLService = Depends(get_ml_service)):
 
 @router.post("/threshold-sweep")
 def threshold_sweep(req: ThresholdSweepRequest, ml: MLService = Depends(get_ml_service)):
+    """
+    Evaluate how classification changes across similarity thresholds. 
+
+    Purpose: find optimal medoid cutoff, observe LLM fallback activation. 
+    """
     thresholds = [round(x * 0.05, 2) for x in range(6, 19)]  
     medoid_best = None          
     llm_best = None            
@@ -83,6 +98,9 @@ def threshold_sweep(req: ThresholdSweepRequest, ml: MLService = Depends(get_ml_s
 
 @router.get("/medoids")
 def list_medoids(ml: MLService = Depends(get_ml_service)):
+    """
+    Return all stored medoid clusters from qdrant
+    """
     points, _ = ml.qdrant.client.scroll(
         collection_name = ml.qdrant.medoid_collection,
         limit = 100,
@@ -103,6 +121,9 @@ def list_medoids(ml: MLService = Depends(get_ml_service)):
 
 @router.post("/batch")
 def batch_test(req: BatchRequest, ml: MLService = Depends(get_ml_service)):
+    """
+    Run batch classification over multiple inputs
+    """
     results = []
     for text in req.texts:
         if not text.strip():
