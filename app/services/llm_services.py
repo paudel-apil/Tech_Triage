@@ -1,7 +1,21 @@
+"""
+LLM service layer for AI-powered ticket assistance.
+
+This module handles interactions with the language module and is responsible for:
+generating ticket resolution suggestions, generating fallback classifications and
+parsing structured JSON response from the LLM.
+"""
+
 import re, json
 from groq import Groq
 
 class LLMService:
+    """
+    Service wrapper around the Groq LLM.
+
+    This class provides utilities for structured prompt generation,
+    JSON extraction, AI-gen ticket solutions and fallback categorization.
+    """
     def __init__(self, api_key: str, model: str = 'qwen/qwen3-32b'):
         self.client = Groq(api_key=api_key)
         self.model = model
@@ -62,6 +76,6 @@ Ticket: {description} /no_think"""
             except:
                 if attempt == 1:
                     return {"label": "Uncategorised / Rare Issues",
-                            "solution": "Unable to generate solution – please check the ticket manually."}
+                            "solution": "Unable to generate solution - please check the ticket manually."}
         return {"label": "Uncategorised / Rare Issues",
-                "solution": "Unable to generate solution – please check the ticket manually."}
+                "solution": "Unable to generate solution - please check the ticket manually."}

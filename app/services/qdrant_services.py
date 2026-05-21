@@ -1,3 +1,10 @@
+"""
+Qdrant vector database service layer. 
+
+This module handles vector collection management, semantic similarity search,
+medoid-based classification and ticket storage and retrieval
+"""
+
 import time
 import numpy as np
 from typing import Optional
@@ -6,13 +13,20 @@ from qdrant_client.http import models as qmodels
 
 class QdrantService:
     """
-    Handles Qdrant collections for medoid classification and incoming ticket storage.
+    Services wrapper around the Qdrant vector database.
+
+    The system uses two collections: ticket_medoids and incoming_tickets. 
+    Ticket medoids stores representative cluster vectors used for classification and
+    incoming_tickets stores embeddings of newly classified support tickets.
     """
     def __init__(self, url: str, api_key: str):
+        """
+        Initializes the Qdrant client and collection names
+        """
         self.client = QdrantClient(url = url, api_key = api_key)
         self.medoid_collection = "ticket_medoids"
         self.incoming_collection = "incoming_tickets"
-        self._counter = int(time.time())
+        self._counter = int(time.time())                # Incremental id generator for incoming tickets.
 
     def setup_medoids(self, medoid_vectors: np.ndarray, medoid_ids: list,
                       meta_label_map: dict, cluster_to_department: dict,
