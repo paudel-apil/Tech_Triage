@@ -1,3 +1,11 @@
+"""
+Priority classification utilities for support ticket triaging.
+
+This module is responsible for extracting urgency-related features from ticket text,
+combining semantic embeddings with handcrafted signals and predicting ticket priority
+levels using a trained ML Model.
+"""
+
 import re
 import numpy as np
 import joblib
@@ -16,6 +24,10 @@ URGENCY_PATTERNS = {
 }
 
 def extract_urgency_features(description: str) -> np.ndarray:
+    """
+    Extract handcrafted urgency-related numerical features from ticket text.
+    Returns np.ndarray Numerical feature vector representing urgency signals
+    """
     text = description.lower()
     features = []
     for pattern in URGENCY_PATTERNS.values():
@@ -28,6 +40,10 @@ def extract_urgency_features(description: str) -> np.ndarray:
     return np.array(features, dtype = np.float32)
 
 class PriorityClassifier:
+    """
+    Machine learning wrapper for support ticket priority prediction.
+    This classifier combines semantic embeddings with handcrafted urgency features.
+    """
     def __init__(self, asset_dir: str = '/app/ml/artifacts'):
         self.model = joblib.load(f"{asset_dir}/priority_xgb_model.pkl")
         self.le = joblib.load(f"{asset_dir}/priority_label_encoder.pkl")

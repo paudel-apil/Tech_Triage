@@ -27,6 +27,11 @@ class Ticket(Base):
     corrected_label = Column(String, nullable = True)
     
 class Feedback(Base):
+    """
+    SQLAlchemy ORM model representing feeback on ticket classifications.
+
+    This table stores corrections and feedback related to AI predictions.
+    """
     __tablename__ = "feedback"
 
     id = Column(Integer, primary_key = True, index = True)

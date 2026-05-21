@@ -1,3 +1,8 @@
+"""
+Embedding utilities for generating semantic vector representations
+from support ticket descriptions.
+"""
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
