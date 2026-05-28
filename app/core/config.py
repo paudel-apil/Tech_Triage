@@ -1,4 +1,3 @@
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from decouple import config
 from sqlalchemy.ext.declarative import declarative_base
@@ -6,12 +5,6 @@ from sqlalchemy.ext.declarative import declarative_base
 SECRET_KEY = config('SECRET_KEY')
 
 class Settings(BaseSettings):
-    """
-    Central configuration class for the application.
-    
-    The value is loaded from a environment variables (.env) 
-    instead of being hardcoded.
-    """
     PROJECT_NAME: str = 'Technical Support Ticket Platform'
     DATABASE_URL: str = config('DATABASE_URL')
     QDRANT_URL: str = config('QDRANT_URL')

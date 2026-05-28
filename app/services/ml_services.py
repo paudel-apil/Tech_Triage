@@ -1,10 +1,3 @@
-"""
-Main machine learning orchestration service. 
-
-This module acts as a central AI application coordinator for the
-Technical Support Ticket Platform.
-"""
-
 import json
 import time
 import numpy as np
@@ -15,16 +8,9 @@ from .qdrant_services import QdrantService
 
 
 class MLService:
-    """
-    Central orchestration service for the AI support ticket pipeline. 
-    This is a unified intelligence layer of the platform.
-    """
     def __init__(self, asset_dir: str = "/app/ml/artifacts",
                  qdrant_url: str = "http://localhost:6333",
                  qdrant_api_key: str = None):
-        """
-        Initializes all ML Pipeline components. 
-        """
         self.embedder = load_embedder()
         _ = self.embedder.encode(["warmup"], normalize_embeddings=True)
 
@@ -47,7 +33,7 @@ class MLService:
 
         self.qdrant = QdrantService(url = qdrant_url, api_key = qdrant_api_key)
 
-        self.llm = None             # LLM service is attached later optionally
+        self.llm = None
 
     def set_llm(self, llm_service: LLMService) -> None:
         """
@@ -59,8 +45,6 @@ class MLService:
                  generate_solution: bool = False, store: bool = True) -> dict:
         """
         Classify a ticket. If store = true, persist in incoming collection.
-
-        Run the complete AI classification pipeline for a support ticket. 
         """
         raw_emb = encode_single(description, self.embedder)
 

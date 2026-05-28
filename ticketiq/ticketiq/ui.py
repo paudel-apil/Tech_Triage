@@ -2,21 +2,31 @@
 import reflex as rx
 
 # ── palette ───────────────────────────────────────────────────────────────────
-BG       = "#0a0a0b"
-SURFACE  = "#141418"
-BORDER   = "#2a2a36"
-BORDER_HI= "#2e2e38"
-TEXT     = "#f0f0f5"
-MUTED    = "#9090a8"
-ACCENT   = "#f5a623"
-ACCENT_BG= "rgba(245,166,35,0.10)"
+import reflex as rx
 
-HIGH     = "#ef4444"
-HIGH_BG  = "rgba(239,68,68,0.10)"
-MED      = "#f5a623"
-MED_BG   = "rgba(245,166,35,0.10)"
-LOW_C    = "#22c55e"
-LOW_BG   = "rgba(34,197,94,0.10)"
+# ── palette ───────────────────────────────────────────────────────────────────
+BG         = "var(--bg)"
+SURFACE    = "var(--surface)"
+BORDER     = "var(--border)"
+BORDER_HI  = "var(--border-hi)"
+TEXT       = "var(--text)"
+MUTED      = "var(--muted)"
+ACCENT     = "var(--accent)"
+ACCENT_BG  = "var(--accent-bg)"
+HIGH       = "var(--high)"
+HIGH_BG    = "var(--high-bg)"
+MED        = "var(--med)"
+MED_BG     = "var(--med-bg)"
+LOW_C      = "var(--low)"
+LOW_BG     = "var(--low-bg)"
+
+CHART_BLUE     = "var(--chart-blue)"
+CHART_ORANGE   = "var(--chart-orange)"
+CHART_PURPLE   = "var(--chart-purple)"
+CHART_PINK     = "var(--chart-pink)"
+CHART_GREEN    = "var(--chart-green)"
+CHART_BLUE_BG  = "var(--chart-blue-bg)"
+CHART_ORANGE_BG = "var(--chart-orange-bg)"
 
 MONO = "'JetBrains Mono', monospace"
 SANS = "'DM Sans', sans-serif"

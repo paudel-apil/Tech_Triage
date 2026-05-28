@@ -4,6 +4,37 @@ from ..ui import (
     mono, ACCENT, BORDER, MUTED, TEXT, SURFACE, SANS, RADIUS, section_label
 )
 
+def network_graph_card() -> rx.Component:
+    return rx.box(
+        # Header + button (outside the iframe)
+        rx.vstack(
+            section_label("SIMILAR TICKETS NETWORK (DRAGGABLE)"),
+            rx.button("Show Network", on_click=PlaygroundState.show_network),
+            spacing="3",
+            margin_bottom="8px",
+        ),
+        # Iframe in a dedicated container that forces 100% width
+        rx.cond(
+            PlaygroundState.network_url != "",
+            rx.box(
+                rx.html(
+                    f'<iframe src="{PlaygroundState.network_url}" '
+                    'style="width:100%; height:520px; border:none; display:block;"></iframe>'
+                ),
+                width="100%",
+                # This ensures the box doesn't shrink
+                flex="1",
+            ),
+        ),
+        # Card shell
+        width="100%",
+        background=SURFACE,
+        border=f"1px solid {BORDER}",
+        border_radius=RADIUS,
+        padding="12px",
+        margin_top="16px",
+    )
+
 def embedding_explorer() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -18,6 +49,7 @@ def embedding_explorer() -> rx.Component:
             rx.button("Probe", on_click=PlaygroundState.probe),
             rx.cond(
                 PlaygroundState.probe_results.length() > 0,
+                network_graph_card(),
                 rx.table.root(
                     rx.table.header(
                         rx.table.row(

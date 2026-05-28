@@ -40,12 +40,12 @@ def ticket_modal() -> rx.Component:
     return rx.cond(
         TicketState.modal_open,
         rx.box(
-            # ── backdrop ────────────────────────────────────────────────
+            # ── backdrop (darker overlay) ────────────────────────────────
             rx.box(
                 on_click=TicketState.close_modal,
                 position="fixed", top="0", left="0",
                 width="100vw", height="100vh",
-                background=OVERLAY,
+                background="rgba(0,0,0,0.7)",
                 z_index="40",
             ),
 
@@ -60,25 +60,25 @@ def ticket_modal() -> rx.Component:
                         ),
                         rx.text(
                             "Ticket Detail",
-                            font_size="15px", font_weight="600", color=TEXT,
+                            font_size="16px", font_weight="600", color=TEXT,
                         ),
                         gap="2px", align="start",
                     ),
                     rx.spacer(),
                     rx.icon_button(
-                        rx.icon("x", size=16),
+                        rx.icon("x", size=18),
                         on_click=TicketState.close_modal,
                         background="transparent",
-                        border=f"1px solid {BORDER}",
-                        border_radius="6px",
+                        border=f"1px solid {BORDER_HI}",
+                        border_radius="8px",
                         color=MUTED,
                         cursor="pointer",
                         size="2",
                         variant="ghost",
                     ),
                     align="center",
-                    padding="20px 24px",
-                    border_bottom=f"1px solid {BORDER}",
+                    padding="24px",
+                    border_bottom=f"1px solid {BORDER_HI}",
                 ),
 
                 # scrollable body
@@ -88,10 +88,10 @@ def ticket_modal() -> rx.Component:
                         section_label("DESCRIPTION"),
                         rx.text(
                             t["description"],
-                            font_size="13px", line_height="1.7",
+                            font_size="14px", line_height="1.7",
                             color=TEXT, white_space="pre-wrap",
                         ),
-                        margin_bottom="20px",
+                        margin_bottom="24px",
                     ),
 
                     # label + department
@@ -99,17 +99,17 @@ def ticket_modal() -> rx.Component:
                         section_label("CATEGORY"),
                         mono(
                             t["label"],
-                            font_size="12px", color=ACCENT,
+                            font_size="13px", color=ACCENT,
                             letter_spacing="0.02em",
                         ),
                         rx.cond(
                             t["department"] != "Uncategorised",
                             rx.text(
                                 t["department"],
-                                font_size="12px", color=MUTED, margin_top="2px",
+                                font_size="13px", color=MUTED, margin_top="4px",
                             ),
                         ),
-                        margin_bottom="20px",
+                        margin_bottom="24px",
                     ),
 
                     # badges + confidence
@@ -117,12 +117,12 @@ def ticket_modal() -> rx.Component:
                         priority_badge(t["priority"]),
                         source_badge(t["source"]),
                         gap="8px",
-                        margin_bottom="12px",
+                        margin_bottom="16px",
                     ),
                     rx.box(
                         rx.text("Confidence", font_size="11px", color=MUTED, margin_bottom="4px"),
                         confidence_bar(t["confidence"]),
-                        margin_bottom="20px",
+                        margin_bottom="24px",
                     ),
 
                     # solution
@@ -161,7 +161,7 @@ def ticket_modal() -> rx.Component:
                             border_left=f"3px solid {ACCENT}",
                             border_radius="4px",
                         ),
-                        margin_bottom="20px",
+                        margin_bottom="24px",
                     ),
 
                     # similar tickets
@@ -173,23 +173,27 @@ def ticket_modal() -> rx.Component:
                         ),
                     ),
 
-                    padding="20px 24px",
+                    padding="24px",
                     overflow_y="auto",
                     flex="1",
                 ),
 
-                # panel shell
+                # panel shell – now with high‑contrast background and bold left edge
                 position="fixed",
                 top="0", right="0",
-                width=PANEL_W,
+                width="540px",
                 max_width="95vw",
                 height="100vh",
-                background=SURFACE,
-                border_left=f"1px solid {BORDER_HI}",
+                background=rx.cond(rx.color_mode == "dark", "#262630", "#f5f6fa"),
+                border_left=f"3px solid {rx.cond(rx.color_mode == 'dark', '#5a5a70', '#a0a0b0')}",
                 z_index="50",
                 display="flex",
                 flex_direction="column",
-                box_shadow="-8px 0 32px rgba(0,0,0,0.4)",
+                box_shadow=rx.cond(
+                    rx.color_mode == "dark",
+                    "-12px 0 40px rgba(255,255,255,0.05), 0 0 0 1px rgba(255,255,255,0.05)",
+                    "-12px 0 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.1)",
+                ),
             ),
         ),
     )

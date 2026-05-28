@@ -1,5 +1,14 @@
-import httpx
+import httpx, asyncio
 import reflex as rx
+import time, json
+
+
+
+from .ui import (
+    mono, ACCENT, CHART_BLUE,
+    ACCENT, BORDER, MUTED, TEXT, SURFACE, SANS, MONO, RADIUS,
+    HIGH, MED, LOW_C, HIGH_BG, MED_BG, LOW_BG,
+)
 
 API_BASE = "http://localhost:8000/api/v1/tickets"
 API_BASE_V1 = "http://localhost:8000/api/v1"
@@ -434,6 +443,7 @@ class PlaygroundState(rx.State):
     batch_text: str = ""
     batch_results: list[dict] = []
 
+
     def set_probe_text(self, value: str):
         self.probe_text = value
 
@@ -484,3 +494,89 @@ class PlaygroundState(rx.State):
             )
             data = resp.json()
             self.batch_results = data["results"]
+
+    network_url: str = ""  
+
+    async def show_network(self):
+        if not self.probe_text.strip():
+            return
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{API_BASE_V1}/dev/probe-tickets-graph",
+                json={"text": self.probe_text.strip()}
+            )
+            data = resp.json()
+            self.network_url = data["url"]
+        
+
+class ThemeState(rx.State):
+    theme: str = "dark"  
+
+    def toggle(self):
+        self.theme = "light" if self.theme == "dark" else "dark"
+
+    @rx.var
+    def opposite(self) -> str:
+        return "light" if self.theme == "dark" else "dark"
+    
+
+class StreamState(rx.State):
+    live_tickets: list[dict] = []
+    last_id: int = 0
+    streaming: bool = False
+
+    async def start_stream(self):
+        self.streaming = True
+        self.last_id = 0
+        self.live_tickets = []
+        return StreamState.poll
+
+    async def poll(self):
+        if not self.streaming:
+            return
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(
+                    f"{API_BASE_V1}/stream/latest",
+                    params={"since_id": self.last_id, "limit": 20},
+                )
+                data = r.json()
+                new_tickets = data.get("tickets", [])
+            if new_tickets:
+                self.live_tickets = new_tickets + self.live_tickets
+                self.last_id = new_tickets[0]["id"]
+                self.live_tickets = self.live_tickets[:50]
+        except Exception:
+            pass
+        await asyncio.sleep(3)
+        return StreamState.poll
+
+    async def stop_stream(self):
+        self.streaming = False
+        self.live_tickets = []
+        self.last_id = 0
+
+    @rx.var
+    def feed_html(self) -> str:
+        """Render the live ticket feed as an HTML string."""
+        if not self.live_tickets:
+            return ""
+        rows = []
+        for t in self.live_tickets:
+            p = t.get("priority", "low").lower()
+            color = {"high": "#ef4444", "medium": "#f59e0b", "low": "#22c55e"}.get(p, "#888")
+            bg = {"high": "rgba(239,68,68,0.10)", "medium": "rgba(245,158,11,0.10)", "low": "rgba(34,197,94,0.10)"}.get(p, "transparent")
+            rows.append(f"""<div style="background:{bg}; border-left:3px solid {color};
+                padding:10px 14px; margin-bottom:6px; border-radius:4px;
+                display:flex; align-items:flex-start; gap:10px; animation:slideIn 0.4s ease-out;">
+                <div style="width:10px;height:10px;border-radius:50%;background:{color};flex-shrink:0;margin-top:4px;"></div>
+                <div style="font-family:monospace;font-size:11px;font-weight:bold;color:{color};min-width:50px;">
+                    {t.get('priority','?').upper()}</div>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <div style="font-size:13px;color:#d0d0d8;line-height:1.4;">{t.get('description','')}</div>
+                    <div style="font-size:11px;color:#9090a8;">
+                        {t.get('label','')}  ·  {t.get('department','')}  ·  conf: {t.get('confidence',0):.2f}  ·  {t.get('source','')}
+                    </div>
+                </div>
+            </div>""")
+        return "".join(rows)

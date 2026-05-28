@@ -1,0 +1,21 @@
+test_tickets = {
+    "The `cert-manager` Order resource for `api.fintech.com` is stuck in 'pending' because the ACME HTTP01 challenge is returning a 404 from the ingress controller after a recent nginx config change.",
+
+    "Our `grafana` dashboard for payment latency shows a gap between 02:00 and 04:00 UTC because the `prometheus` retention policy was shortened to 30 days without updating the dashboard query range.",
+
+    "The `mlflow` experiment tracking server is returning '500 Internal Server Error' when logging parameters larger than 64KB because the `nginx` reverse proxy has `client_max_body_size` set to 64k.",
+
+    "A `terraform apply` on the staging environment is trying to destroy and recreate the `aws_elasticache_replication_group` because the `snapshot_window` parameter was removed from the module and the state file sees a drift.",
+
+    "The `sonarqube` scanner in the CI pipeline fails with 'Project not found' because the project key was renamed from `fintech-payment` to `fintech.payment` in the UI but the `sonar-project.properties` file was not updated.",
+
+    "Our `karpenter` provisioner is scaling down GPU nodes too aggressively during off-peak hours, causing model inference pods to be evicted mid-request and resulting in 503 errors for the risk scoring API.",
+
+    "The `datadog` agent on `us-east-1` EKS nodes is emitting duplicate `kubernetes_state.*` metrics because the `kube-state-metrics` service is being scraped by both the cluster agent and the node agent simultaneously.",
+
+    "The `vault` audit log is full of 'permission denied' errors for the `payment-service` role because the policy attached to the role was changed to require `sudo` for `transit/decrypt` operations after a security audit.",
+
+    "The `next.js` build in the CI pipeline fails with 'Error: EMFILE: too many open files' because the build process opens more than 1024 file handles simultaneously and the default `ulimit` on the runner is too low.",
+
+    "The `timescaledb` continuous aggregate for `hourly_trade_volume` stopped refreshing after the source hypertable was renamed from `trades` to `trade_events` and the materialization job is referencing the old name.",
+}

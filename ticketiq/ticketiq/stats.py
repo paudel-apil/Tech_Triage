@@ -7,11 +7,10 @@ from .ui import (
     HIGH, HIGH_BG, LOW_C, LOW_BG, MED, MED_BG, SANS, MONO, RADIUS,
 )
 
-# Recharts palette
+# PIE_COLORS – using CSS variables works fine here because they're passed directly as fill values
 PIE_COLORS = [ACCENT, "#60a5fa", LOW_C, "#a78bfa", HIGH, "#f472b6", "#34d399"]
 
-
-# ── Stat card ─────────────────────────────────────────────────────────────────
+# ── Stat card (unchanged) ────────────────────────────────────────────────────
 
 def stat_card(label: str, value: rx.Var, sub: str = "") -> rx.Component:
     return rx.box(
@@ -29,7 +28,7 @@ def stat_card(label: str, value: rx.Var, sub: str = "") -> rx.Component:
     )
 
 
-# ── Priority donut ────────────────────────────────────────────────────────────
+# ── Priority donut (unchanged) ──────────────────────────────────────────────
 
 def priority_donut() -> rx.Component:
     stats = TicketState.stats
@@ -86,7 +85,7 @@ def priority_donut() -> rx.Component:
     )
 
 
-# ── Source donut ──────────────────────────────────────────────────────────────
+# ── Source donut (unchanged) ────────────────────────────────────────────────
 
 def source_donut() -> rx.Component:
     stats = TicketState.stats
@@ -136,7 +135,7 @@ def source_donut() -> rx.Component:
     )
 
 
-# ── Top labels bar chart ──────────────────────────────────────────────────────
+# ── Top labels bar chart – FIXED TICK COLORS ────────────────────────────────
 
 def top_labels_chart() -> rx.Component:
     return rx.box(
@@ -144,18 +143,18 @@ def top_labels_chart() -> rx.Component:
         rx.recharts.bar_chart(
             rx.recharts.bar(
                 data_key="count",
-                fill="#f59e0b",
+                fill=rx.cond(rx.color_mode == "dark", "#f59e0b", "#d97706"),
                 radius=[0, 4, 4, 0],
             ),
             rx.recharts.x_axis(
                 type_="number",
-                tick={"fontSize": 10, "fill": MUTED, "fontFamily": MONO},
+                tick={"fontSize": 10, "fill": rx.cond(rx.color_mode == "dark", "#ccc", "#555"), "fontFamily": MONO},
             ),
             rx.recharts.y_axis(
                 data_key="label",
                 type_="category",
-                tick={"fontSize": 10, "fill": MUTED, "fontFamily": MONO},
-                width=200,                          # wider for longer labels
+                tick={"fontSize": 10, "fill": rx.cond(rx.color_mode == "dark", "#ccc", "#555"), "fontFamily": MONO},
+                width=200,
             ),
             rx.recharts.cartesian_grid(
                 stroke_dasharray="3 3",
@@ -170,7 +169,7 @@ def top_labels_chart() -> rx.Component:
                     "fontSize": "12px",
                     "color": TEXT,
                 },
-                cursor={"fill": "rgba(245,158,11,0.06)"},
+                cursor={"fill": rx.cond(rx.color_mode == "dark", "rgba(245,158,11,0.06)", "rgba(217,119,6,0.06)")},
             ),
             layout="vertical",
             data=TicketState.stats_top_labels,
@@ -186,7 +185,7 @@ def top_labels_chart() -> rx.Component:
     )
 
 
-# ── Department bar chart ──────────────────────────────────────────────────────
+# ── Department bar chart – FIXED TICK COLORS ────────────────────────────────
 
 def dept_chart() -> rx.Component:
     return rx.box(
@@ -194,17 +193,17 @@ def dept_chart() -> rx.Component:
         rx.recharts.bar_chart(
             rx.recharts.bar(
                 data_key="count",
-                fill="#60a5fa",
+                fill=rx.cond(rx.color_mode == "dark", "#60a5fa", "#2563eb"),
                 radius=[0, 4, 4, 0],
             ),
             rx.recharts.x_axis(
                 type_="number",
-                tick={"fontSize": 10, "fill": MUTED, "fontFamily": MONO},
+                tick={"fontSize": 10, "fill": rx.cond(rx.color_mode == "dark", "#ccc", "#555"), "fontFamily": MONO},
             ),
             rx.recharts.y_axis(
                 data_key="department",
                 type_="category",
-                tick={"fontSize": 10, "fill": MUTED, "fontFamily": MONO},
+                tick={"fontSize": 10, "fill": rx.cond(rx.color_mode == "dark", "#ccc", "#555"), "fontFamily": MONO},
                 width=180,
             ),
             rx.recharts.cartesian_grid(
@@ -220,9 +219,9 @@ def dept_chart() -> rx.Component:
                     "fontSize": "12px",
                     "color": TEXT,
                 },
-                cursor={"fill": "rgba(96,165,250,0.06)"},
+                cursor={"fill": rx.cond(rx.color_mode == "dark", "rgba(96,165,250,0.06)", "rgba(37,99,235,0.06)")},
             ),
-            layout="vertical",                     # ← horizontal bars
+            layout="vertical",
             data=TicketState.stats_department_breakdown,
             width="100%",
             height=400,
@@ -234,6 +233,7 @@ def dept_chart() -> rx.Component:
         padding="20px",
         width="100%",
     )
+
 
 def uncategorised_card() -> rx.Component:
     return rx.box(
@@ -253,7 +253,8 @@ def uncategorised_card() -> rx.Component:
         min_width="120px",
     )
 
-# ── Stats page ────────────────────────────────────────────────────────────────
+
+# ── Stats page (unchanged) ──────────────────────────────────────────────────
 
 def stats_page() -> rx.Component:
     s = TicketState.stats
@@ -348,4 +349,3 @@ def stats_page() -> rx.Component:
         padding="40px 24px", width="100%",
         on_mount=TicketState.load_stats,
     )
-

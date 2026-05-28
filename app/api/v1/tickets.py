@@ -1,15 +1,3 @@
-"""
-FastAPI router for ticket lifestyle management. 
-
-This module exposes REST APIs for:
-- ticket creation & classification
-- feedback collection
-- ticket search
-- similarity retrieval
-- analytics dashboard
-- trend analysis
-"""
-
 import time
 from typing import Optional
 from datetime import datetime, timedelta
@@ -29,14 +17,6 @@ from app.services.ml_service_dependency import get_ml_service
 router = APIRouter(prefix = "/tickets", tags = ["tickets"])
 
 def find_or_create_ticket(db: Session, description: str, classification: dict):
-    """
-    Idempotent ticket creation logic. 
-
-    If a ticket with the same description exists within the last hour:
-    - update its classification
-    - avoid duplication,
-    otherwise create a new ticket record
-    """
     cutoff = datetime.utcnow() - timedelta(minutes = 60)
     existing = (
         db.query(Ticket)
@@ -80,12 +60,6 @@ def create_and_classify_ticket(
     db: Session = Depends(get_db),
     ml: MLService = Depends(get_ml_service)
 ):
-    """
-    Create and classify a support ticket. 
-
-    Full pipeline: Generate embeddings -> run ML classification -> Query similar tickets ->
-    store in PostgreSQL and Qdrant -> return enriched response.
-    """
     result = ml.classify(
         description=ticket.description,
         sim_threshold=ticket.sim_threshold,
@@ -135,31 +109,40 @@ def submit_feedback(
     feedback: FeedbackCreate,
     db: Session = Depends(get_db)
 ):
-    """
-    Collect user feedback for classification correction.
-    Supports thumbs up/down validation, manual correction
-    """
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    original_label = ticket.label        
-
-    entry = Feedback(
-        ticket_id=ticket_id,
-        original_label=original_label,
-        corrected_label=feedback.corrected_label if feedback.feedback_type == "thumbs_down" else None,
-        feedback_type=feedback.feedback_type
+    existing = (
+        db.query(Feedback)
+        .filter(Feedback.ticket_id == ticket_id, Feedback.feedback_type == feedback.feedback_type)
+        .first()
     )
-    db.add(entry)
+    if existing:
+        return {"status": "already_exists", "id": existing.id}
 
-    if feedback.feedback_type == "thumbs_down" and feedback.corrected_label:
+    if feedback.feedback_type == "thumbs_down":
+        if not feedback.corrected_label:
+            raise HTTPException(status_code=400, detail="Corrected label is required for thumbs_down")
         ticket.corrected_label = feedback.corrected_label
-        ticket.label = feedback.corrected_label          
-        print(f"Ticket {ticket_id}: label corrected from '{original_label}' to '{feedback.corrected_label}'")
+        ticket.label = feedback.corrected_label
+        entry = Feedback(
+            ticket_id=ticket_id,
+            original_label=ticket.label, 
+            corrected_label=feedback.corrected_label,
+            feedback_type="thumbs_down"
+        )
+    else:
+        entry = Feedback(
+            ticket_id=ticket_id,
+            original_label=ticket.label,
+            corrected_label="",
+            feedback_type="thumbs_up"
+        )
 
+    db.add(entry)
     db.commit()
-    return {"status": "ok", "original_label": original_label, "new_label": ticket.label}
+    return {"status": "ok", "id": entry.id}
 
 
 @router.get("/", response_model = TicketListResponse)
@@ -207,16 +190,11 @@ def list_departments(db: Session = Depends(get_db)):
     departments = sorted(set(departments))
     return {"departments": departments}
 
-_stats_cache = {"data": None, "ts": 0}      # Cached system stats to reduce DB load.
+
+_stats_cache = {"data": None, "ts": 0}
 
 @router.get("/stats", tags=["tickets"])
 def get_stats(db: Session = Depends(get_db)):
-    """
-    Compute and cache system-wide ticket statistics. 
-
-    Includes: totals, priority breakdown, top labels, source distribution, 
-    confidence metrics and department load
-    """
     global _stats_cache
     now = time.time()
 
@@ -304,13 +282,10 @@ def get_similar_tickets(ticket_id: int, limit: int = Query(5, ge = 1, le = 20), 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Trend Analytics Endpoints
+# Trend eddndpoints
 
 @router.get("/trends/accelerating")
 def accelerating_categories(db: Session = Depends(get_db)):
-    """
-    Detect categories with rising ticket volume.
-    """
     now = datetime.utcnow()
     this_start = now - timedelta(days = 7)
     last_start = now - timedelta(days = 14)
@@ -361,9 +336,6 @@ def accelerating_categories(db: Session = Depends(get_db)):
 
 @router.get("/trends/priority-timeline")
 def priority_timeline(db: Session = Depends(get_db), days: int = 7, granularity: str = "hour"):
-    """
-    Time-based priority distribution analysis.
-    """
     now = datetime.utcnow()
     start = now - timedelta(days = days)
 
@@ -389,9 +361,6 @@ def priority_timeline(db: Session = Depends(get_db), days: int = 7, granularity:
 
 @router.get("/trends/fallback-rate")
 def fallback_rate(db: Session = Depends(get_db), days: int = 14):
-    """
-    Measure how often LLM fallback is triggered.
-    """
     now = datetime.utcnow()
     start = now - timedelta(days = days)
 
@@ -422,9 +391,6 @@ def fallback_rate(db: Session = Depends(get_db), days: int = 14):
 
 @router.get("/trends/department-load")
 def department_load(db: Session = Depends(get_db), days: int = 14):
-    """
-    Track department-wise ticket load over time
-    """
     now = datetime.utcnow()
     start = now - timedelta(days = days)
 
@@ -449,9 +415,6 @@ def department_load(db: Session = Depends(get_db), days: int = 14):
 
 @router.get("/trends/new-labels")
 def new_labels(db: Session = Depends(get_db)):
-    """
-    Detect newly emerging or rapidly growing labels. 
-    """
     now = datetime.utcnow()
     this_start = now - timedelta(days=7)
     last_start = now - timedelta(days=14)

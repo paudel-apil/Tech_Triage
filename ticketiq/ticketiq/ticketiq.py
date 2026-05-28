@@ -10,9 +10,19 @@ from ticketiq.search import search_page
 from ticketiq.stats import stats_page
 from .pages.trends import trends_page
 from .pages.playground import playground_page
+from .pages.stream_page import stream_page
 from ticketiq.ui import (
     BG, SURFACE, BORDER, BORDER_HI, ACCENT, ACCENT_BG,
     MUTED, TEXT, SANS, MONO, RADIUS,
+)
+
+
+app = rx.App(
+    style={"font_family": "Inter, sans-serif"},
+    theme=rx.theme(appearance="light", accent_color="blue"),
+    stylesheets=[
+        "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap",
+    ],
 )
 
 GOOGLE_FONTS = (
@@ -29,6 +39,7 @@ NAV = [
     ("stats",   "bar-chart-2",  "Stats"),
     ("trends", "trending-up", "Trends"),
     ("playground", "flask-conical", "Playground"),
+    ("stream", "radio", "Live"),
 
 ]
 
@@ -68,7 +79,7 @@ def sidebar() -> rx.Component:
         # logo
         rx.hstack(
             rx.box(
-                rx.icon("cpu", size=16, color="#0a0a0b"),
+                rx.icon("cpu", size=16, color=TEXT),
                 width="30px", height="30px",
                 background=ACCENT, border_radius="6px",
                 display="flex", align_items="center", justify_content="center",
@@ -92,8 +103,20 @@ def sidebar() -> rx.Component:
             padding="0 10px",
         ),
 
-        # footer
+        # footer (with toggle button)
         rx.box(
+            rx.icon_button(
+                rx.cond(rx.color_mode == "dark", rx.icon("sun", size=16), rx.icon("moon", size=16)),
+                on_click=rx.toggle_color_mode,
+                background="transparent",
+                border=f"1px solid {BORDER}",
+                border_radius="6px",
+                color=MUTED,
+                cursor="pointer",
+                size="2",
+                variant="ghost",
+                margin_bottom="10px",
+            ),
             rx.text(
                 "BGE-M3 · HDBSCAN · XGBoost · Groq",
                 font_size="10px", color=MUTED, font_family=MONO,
@@ -128,6 +151,7 @@ def page_body() -> rx.Component:
         ("stats", stats_page()),
         ("trends", trends_page()),
         ("playground", playground_page()),
+        ("stream", stream_page()),
         submit_page(),
     )
 
@@ -136,9 +160,60 @@ def page_body() -> rx.Component:
 
 def index() -> rx.Component:
     return rx.box(
-        # inject Google Fonts
+        # Inject Google Fonts
         rx.script(src=GOOGLE_FONTS),
 
+        # Embedded theme styles (dark / light + chart colours)
+        rx.el.style("""
+            html[data-theme='dark'] {
+                --bg: #1a1a20;
+                --surface: #242430;
+                --border: #343440;
+                --border-hi: #4a4a5a;
+                --text: #e0e0e8;
+                --muted: #7a7a90;
+                --accent: #818cf8;
+                --accent-bg: rgba(129,140,248,0.12);
+                --high: #f87171;
+                --high-bg: rgba(248,113,113,0.12);
+                --med: #fbbf24;
+                --med-bg: rgba(251,191,36,0.12);
+                --low: #34d399;
+                --low-bg: rgba(52,211,153,0.12);
+                --chart-blue: #60a5fa;
+                --chart-orange: #f59e0b;
+                --chart-purple: #a78bfa;
+                --chart-pink: #f472b6;
+                --chart-green: #34d399;
+                --chart-blue-bg: rgba(96,165,250,0.06);
+                --chart-orange-bg: rgba(245,158,11,0.06);
+            }
+            html[data-theme='light'] {
+                --bg: #f8f9fa;
+                --surface: #ffffff;
+                --border: #dee2e6;
+                --border-hi: #adb5bd;
+                --text: #212529;
+                --muted: #6c757d;
+                --accent: #0d6efd;
+                --accent-bg: rgba(13,110,253,0.10);
+                --high: #dc3545;
+                --high-bg: rgba(220,53,69,0.08);
+                --med: #fd7e14;
+                --med-bg: rgba(253,126,20,0.08);
+                --low: #198754;
+                --low-bg: rgba(25,135,84,0.08);
+                --chart-blue: #60a5fa;
+                --chart-orange: #f59e0b;
+                --chart-purple: #a78bfa;
+                --chart-pink: #f472b6;
+                --chart-green: #34d399;
+                --chart-blue-bg: rgba(96,165,250,0.06);
+                --chart-orange-bg: rgba(245,158,11,0.06);
+            }
+        """),
+
+        # Sidebar + main content
         rx.hstack(
             sidebar(),
             rx.box(
@@ -152,7 +227,7 @@ def index() -> rx.Component:
             width="100%",
         ),
 
-        # global styles
+        # Global styles
         font_family=SANS,
         background=BG,
         color=TEXT,
@@ -166,8 +241,6 @@ def index() -> rx.Component:
             ),
         },
     )
-
-
 # ── App ───────────────────────────────────────────────────────────────────────
 
 app = rx.App(

@@ -75,38 +75,41 @@ def ticket_card(ticket: dict, show_similar: bool = True) -> rx.Component:
             margin_bottom="14px",
         ),
 
-        # ── solution toggle ───────────────────────────────────────────────
-        rx.box(
-            rx.button(
-                rx.icon(rx.cond(is_open, "chevron-up", "chevron-down"), size=12),
-                rx.icon("zap", size=12),
-                rx.text("Solution", font_size="12px", font_family=SANS),
-                on_click=TicketState.toggle_expanded(tid),
-                display="flex", align_items="center", gap="5px",
-                background=rx.cond(is_open, ACCENT_BG, "transparent"),
-                color=rx.cond(is_open, ACCENT, MUTED),
-                border=rx.cond(is_open, f"1px solid {ACCENT}", f"1px solid {BORDER}"),
-                border_radius="4px", padding="5px 10px",
-                cursor="pointer", font_family=SANS,
-                transition="all 0.15s",
-            ),
-            rx.cond(
-                is_open,
-                rx.box(
-                    rx.text(
-                        ticket["solution"],
-                        font_size="13px", line_height="1.75",
-                        color=TEXT, white_space="pre-wrap",
-                    ),
-                    margin_top="10px", padding="14px 16px",
-                    background="rgba(245,166,35,0.04)",
-                    border=f"1px solid {BORDER}",
-                    border_left=f"3px solid {ACCENT}",
-                    border_radius="4px",
+        # ── solution toggle (only when solution is present) ──────────────
+        rx.cond(
+            ticket["solution"] != "",
+            rx.box(
+                rx.button(
+                    rx.icon(rx.cond(is_open, "chevron-up", "chevron-down"), size=12),
+                    rx.icon("zap", size=12),
+                    rx.text("Solution", font_size="12px", font_family=SANS),
+                    on_click=TicketState.toggle_expanded(tid),
+                    display="flex", align_items="center", gap="5px",
+                    background=rx.cond(is_open, ACCENT_BG, "transparent"),
+                    color=rx.cond(is_open, ACCENT, MUTED),
+                    border=rx.cond(is_open, f"1px solid {ACCENT}", f"1px solid {BORDER}"),
+                    border_radius="4px", padding="5px 10px",
+                    cursor="pointer", font_family=SANS,
+                    transition="all 0.15s",
                 ),
-            ),
-            margin_bottom=rx.cond(
-                show_similar & TicketState.has_similar_tickets, "14px", "0"
+                rx.cond(
+                    is_open,
+                    rx.box(
+                        rx.text(
+                            ticket["solution"],
+                            font_size="13px", line_height="1.75",
+                            color=TEXT, white_space="pre-wrap",
+                        ),
+                        margin_top="10px", padding="14px 16px",
+                        background="rgba(245,166,35,0.04)",
+                        border=f"1px solid {BORDER}",
+                        border_left=f"3px solid {ACCENT}",
+                        border_radius="4px",
+                    ),
+                ),
+                margin_bottom=rx.cond(
+                    show_similar & TicketState.has_similar_tickets, "14px", "0"
+                ),
             ),
         ),
 
@@ -124,11 +127,16 @@ def ticket_card(ticket: dict, show_similar: bool = True) -> rx.Component:
         ),
 
         # ── card shell ────────────────────────────────────────────────────
+                # ── card shell ────────────────────────────────────────────────────
         background=SURFACE,
-        border=f"1px solid {BORDER}",
+        border=f"2px solid {rx.cond(rx.color_mode == 'dark', '#4a4a5e', '#c0c0cc')}",
         border_radius=RADIUS,
         padding="20px",
         width="100%",
-        _hover={"border_color": BORDER_HI},
-        transition="border-color 0.2s",
+        box_shadow="0 2px 8px rgba(0,0,0,0.15)",
+        _hover={
+            "border_color": ACCENT,
+            "box_shadow": f"0 4px 16px {ACCENT_BG}",
+        },
+        transition="all 0.2s ease",
     )

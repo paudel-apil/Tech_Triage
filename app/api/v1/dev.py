@@ -1,14 +1,20 @@
-"""
-Developer / debugging API routes for ML pipeline inspection
-"""
-
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import List, Optional
 import numpy as np
+import uuid
 from app.services.ml_service_dependency import get_ml_service
 from app.services.ml_services import MLService
 from app.pipeline.gen_embeddings import encode_single
+
+import textwrap, os
+from pathlib import Path
+from pyvis.network import Network
+
+
+
+STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)   
 
 router = APIRouter(prefix = "/dev", tags = ["dev"])
 
@@ -24,12 +30,6 @@ class BatchRequest(BaseModel):
 
 @router.post("/probe")
 def probe_embedding(req: ProbeRequest, ml: MLService = Depends(get_ml_service)):
-    """
-    Inspect embedding similarity against medoid clusters. 
-
-    Helps understand why a ticket was classified a certain way,
-    embedding-space behavior and cluster separation quality
-    """
     emb = encode_single(req.text, ml.embedder).astype(np.float32)
     result = ml.qdrant.client.query_points(
         collection_name=ml.qdrant.medoid_collection,
@@ -51,11 +51,6 @@ def probe_embedding(req: ProbeRequest, ml: MLService = Depends(get_ml_service)):
 
 @router.post("/threshold-sweep")
 def threshold_sweep(req: ThresholdSweepRequest, ml: MLService = Depends(get_ml_service)):
-    """
-    Evaluate how classification changes across similarity thresholds. 
-
-    Purpose: find optimal medoid cutoff, observe LLM fallback activation. 
-    """
     thresholds = [round(x * 0.05, 2) for x in range(6, 19)]  
     medoid_best = None          
     llm_best = None            
@@ -98,9 +93,6 @@ def threshold_sweep(req: ThresholdSweepRequest, ml: MLService = Depends(get_ml_s
 
 @router.get("/medoids")
 def list_medoids(ml: MLService = Depends(get_ml_service)):
-    """
-    Return all stored medoid clusters from qdrant
-    """
     points, _ = ml.qdrant.client.scroll(
         collection_name = ml.qdrant.medoid_collection,
         limit = 100,
@@ -121,9 +113,6 @@ def list_medoids(ml: MLService = Depends(get_ml_service)):
 
 @router.post("/batch")
 def batch_test(req: BatchRequest, ml: MLService = Depends(get_ml_service)):
-    """
-    Run batch classification over multiple inputs
-    """
     results = []
     for text in req.texts:
         if not text.strip():
@@ -143,3 +132,35 @@ def batch_test(req: BatchRequest, ml: MLService = Depends(get_ml_service)):
             "source": res["source"],
         })
     return {"results": results}
+
+@router.post("/probe-tickets-graph")
+def probe_tickets_graph(req: ProbeRequest, request: Request, ml: MLService = Depends(get_ml_service)):
+    emb = encode_single(req.text, ml.embedder).astype(np.float32)
+
+    result = ml.qdrant.client.query_points(
+        collection_name=ml.qdrant.incoming_collection,
+        query=emb[0].tolist(),
+        limit=10,
+        with_payload=True,
+    )
+    points = result.points if hasattr(result, 'points') else result
+
+    net = Network(height="500px", width="100%", bgcolor="#111114", font_color="#e8e8f0")
+    net.force_atlas_2based()
+
+    query_label = textwrap.shorten(req.text, width=50, placeholder="…")
+    net.add_node(0, label=query_label, title=req.text, color="#f5a623", size=25, shape="dot")
+
+    for i, hit in enumerate(points, start=1):
+        desc = hit.payload.get("description", "")[:100]
+        label = f"{i}. {textwrap.shorten(desc, width=60, placeholder='…')}"
+        sim = round(hit.score, 3)
+        net.add_node(i, label=label, title=f"Similarity: {sim}\n{desc}", color="#60a5fa", size=15)
+        net.add_edge(0, i, value=sim, title=str(sim))
+
+    unique_name = f"network_{uuid.uuid4().hex[:8]}.html"
+    filepath = str(STATIC_DIR / unique_name)
+    net.save_graph(filepath)
+
+    base_url = str(request.base_url).rstrip("/")
+    return {"url": f"{base_url}/static/{unique_name}"}

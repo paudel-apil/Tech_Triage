@@ -25,14 +25,6 @@ INTENT_KEYWORDS = {
 
 
 def normalize_tools(text: str) -> str:
-    """
-    Replaces specific tool names with generalized categories and
-    returns normalized text with tool-specific names replaced.
-
-    Different teams may use different technologies to describe the
-    same underlying operational issue. So this improves cluster quality,
-    semantic similarity, model generalization and duplicate detection.
-    """
     text = text.lower()
     for pattern, replacement in TOOL_REPLACEMENTS.items():  
         text = re.sub(pattern, replacement, text)
@@ -41,7 +33,6 @@ def normalize_tools(text: str) -> str:
 def extract_intent_text(text: str) -> str:
     """
     Remove version numbers, commit hashes, IPs, ports, incident/PR numbers.
-    Returns cleaned text focused on operational intent.
     """
     text = re.sub(r'\bv\d+[\.\d]+\b', '', text)
     text = re.sub(r'\b[a-f0-9]{7,40}\b', '', text)

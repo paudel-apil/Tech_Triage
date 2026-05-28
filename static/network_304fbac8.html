@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html style="height:100%; margin:0; padding:0;">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { height:100vh; margin:0; padding:0; overflow:hidden; background:#111114; }
+  #mynetwork { width:100vw; height:100vh; }
+</style>
+</head>
+<body>
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 100%;
+                 background-color: #111114;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#f5a623", "font": {"color": "#e8e8f0"}, "id": 0, "label": "Coffee machine isn\u0027t working at all", "shape": "dot", "size": 25, "title": "Coffee machine isn\u0027t working at all"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 1, "label": "1. My coffee machine is broken", "shape": "dot", "size": 15, "title": "Similarity: 0.88\nMy coffee machine is broken"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 2, "label": "2. The office coffee machine is leaking water onto the counter\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.706\nThe office coffee machine is leaking water onto the counter and nobody knows who the vendor is."}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 3, "label": "3. My personal standing desk keeps lowering itself randomly\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.597\nMy personal standing desk keeps lowering itself randomly throughout the day."}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 4, "label": "4. Our OAuth2 token for the external analytics provider\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.529\nOur OAuth2 token for the external analytics provider expired overnight, and the automated refresh is"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 5, "label": "5. Our internal pki intermediate ca certificate is expiring\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.519\nOur internal pki intermediate ca certificate is expiring tomorrow; several service\u2011mesh sidecars are"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 6, "label": "6. The horizontal pod autoscaler for the fraud\u2011scoring service\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.515\nThe horizontal pod autoscaler for the fraud\u2011scoring service isn\u0027t scaling up even though CPU has bee"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 7, "label": "7. My company\u2011issued noise\u2011cancelling headphones have a static\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.515\nMy company\u2011issued noise\u2011cancelling headphones have a static buzz in the right ear cup."}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 8, "label": "8. The Kubernetes cert-manager is failing to renew the\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.498\nThe Kubernetes cert-manager is failing to renew the wildcard TLS certificate, causing all ingress en"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 9, "label": "9. The React Native iOS build fails with \u0027Code Sign Error: No\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.495\nThe React Native iOS build fails with \u0027Code Sign Error: No matching provisioning profile found\u0027 afte"}, {"color": "#60a5fa", "font": {"color": "#e8e8f0"}, "id": 10, "label": "10. The React Native iOS build fails with \u0027Code Sign Error: No\u2026", "shape": "dot", "size": 15, "title": "Similarity: 0.495\nThe React Native iOS build fails with \u0027Code Sign Error: No matching provisioning profile found\u0027 afte"}]);
+                  edges = new vis.DataSet([{"from": 0, "title": "0.88", "to": 1, "value": 0.88}, {"from": 0, "title": "0.706", "to": 2, "value": 0.706}, {"from": 0, "title": "0.597", "to": 3, "value": 0.597}, {"from": 0, "title": "0.529", "to": 4, "value": 0.529}, {"from": 0, "title": "0.519", "to": 5, "value": 0.519}, {"from": 0, "title": "0.515", "to": 6, "value": 0.515}, {"from": 0, "title": "0.515", "to": 7, "value": 0.515}, {"from": 0, "title": "0.498", "to": 8, "value": 0.498}, {"from": 0, "title": "0.495", "to": 9, "value": 0.495}, {"from": 0, "title": "0.495", "to": 10, "value": 0.495}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
+</body>
+</html>
